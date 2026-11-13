@@ -1,0 +1,22 @@
+{
+  "identity": "065e8d74ab87914388566fb8488b30124b4e4af00f43eea4404603bc9b32474c",
+  "result": {
+    "verdict": "done",
+    "summary": "Replaced the fusion.py stub with a real reciprocal rank fusion implementation. `scores` and `fuse` validate k and limit up front, materialize rankings once (generator-safe), honor first-occurrence positions for duplicate IDs without shifting later positions, sum 1/(k+rank) with rank starting at 1, and order by descending score with ascending document ID tie-break before applying an optional limit. search_app.py was left untouched and still returns {\"documents\": [...], \"method\": \"fusion\"}.",
+    "findings": [
+      "Validation rejects bool/NaN/inf/non-positive k and bool/negative/non-int limit with ValueError before consuming inputs.",
+      "Truncated rankings contribute zero for absent documents; duplicate IDs score only at their first position while later IDs keep original ranks.",
+      "fuse delegates to a shared internal scoring helper so scores and fuse stay consistent.",
+      "All eight acceptance tests pass, including the unchanged search_app caller."
+    ],
+    "evidence": [
+      "run_checks: all 8 acceptance tests OK (default_and_custom_k, duplicates_preserve_original_positions, empty, existing_caller, hand_calculated_scores, invalid_k, limits, ties)",
+      "fusion.py implements module docstring, _validate_k, _validate_limit, _score, scores(rankings, k=60), fuse(rankings, k=60, limit=None)",
+      "search_app.search_results(['a','b'], ['b','c'], limit=2) returns {'documents': [...], 'method': 'fusion'} via the existing caller, unmodified"
+    ]
+  },
+  "manifest": {
+    "fusion.py": "b482e66c7198fbd022ad022a0f5db4692e54ec17e2d9908c4cf11a5d4fbc8102",
+    "search_app.py": "21b0147f4c059c8df547b8cae5c360cc2465ff51348f0c24cfd1101c3564127f"
+  }
+}

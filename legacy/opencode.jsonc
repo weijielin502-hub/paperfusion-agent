@@ -1,0 +1,62 @@
+﻿{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "YYTT": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "YYTT API",
+      "options": {
+        "baseURL": "https://newapi.kylechoy.top/v1"
+      },
+      "models": {
+        "deepseek-v4-flash": {
+          "name": "DeepSeek v4 flash",
+          "limit": { "context": 1000000, "output": 393216 },
+          "cost": { "input": 1, "output": 2 }
+        },
+        "deepseek-v4-pro": {
+          "name": "DeepSeek v4 pro",
+          "limit": { "context": 1000000, "output": 393216 },
+          "cost": { "input": 1, "output": 2 }
+        },
+        "kimi-k2.6": {
+          "name": "Kimi K2.6",
+          "limit": { "context": 262144, "output": 32768 },
+          "cost": { "input": 4, "output": 21 }
+        },
+        "glm-5.1": {
+          "name": "GLM 5.1",
+          "limit": { "context": 202752, "output": 16384 },
+          "cost": { "input": 4, "output": 16 }
+        },
+        "MiniMax-M2.7": {
+          "name": "MiniMax M2.7",
+          "limit": { "context": 204800, "output": 131072 },
+          "cost": { "input": 2.1, "output": 8.4 }
+        },
+        "qwen3.6-plus": {
+          "name": "Qwen3.6 plus",
+          "limit": { "context": 1000000, "output": 81920 },
+          "cost": { "input": 2, "output": 12 }
+        }
+      }
+    }
+  },
+  "model": "YYTT/deepseek-v4-flash",
+  "permission": {
+    "edit": {
+      "*": "deny",
+      "E:/yytt/aiNetworkAnalysis/PaperFusion/**": "allow"
+    },
+    "external_directory": "ask"
+  },
+  "agent": {
+    "task": {
+      "default_model": "YYTT/deepseek-v4-flash",
+      "permission": {
+        "implementer": "allow",
+        "reviewer": "allow",
+        "integration-monitor": "allow"
+      }
+    }
+  }
+}

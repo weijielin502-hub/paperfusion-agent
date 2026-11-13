@@ -1,0 +1,9 @@
+{
+  "returncode": 0,
+  "timed_out": false,
+  "seconds": 1.078,
+  "output": "test_default_and_custom_k (__main__.Acceptance.test_default_and_custom_k) ... ok\ntest_duplicates_preserve_original_positions (__main__.Acceptance.test_duplicates_preserve_original_positions) ... ok\ntest_empty (__main__.Acceptance.test_empty) ... ok\ntest_existing_caller (__main__.Acceptance.test_existing_caller) ... ok\ntest_hand_calculated_scores (__main__.Acceptance.test_hand_calculated_scores) ... ok\ntest_invalid_k (__main__.Acceptance.test_invalid_k) ... ok\ntest_limits (__main__.Acceptance.test_limits) ... ok\ntest_ties (__main__.Acceptance.test_ties) ... ok\n\n----------------------------------------------------------------------\nRan 8 tests in 0.001s\n\nOK\nMETRICS_JSON={\"dataset\": \"four synthetic queries; no statistical claim\", \"paper_benchmark_reproduced\": false, \"tests\": 8, \"queries\": [{\"query\": 0, \"first_retriever_ndcg3\": 0.7363636171343382, \"rrf_ndcg3\": 0.9721212198129313}, {\"query\": 1, \"first_retriever_ndcg3\": 1.0, \"rrf_ndcg3\": 0.9721212198129313}, {\"query\": 2, \"first_retriever_ndcg3\": 0.8339912323981488, \"rrf_ndcg3\": 0.8339912323981488}, {\"query\": 3, \"first_retriever_ndcg3\": 0.6653152460429406, \"rrf_ndcg3\": 0.606422698504514}]}\n",
+  "log": "E:\\yytt\\demo整理\\paperfusion\\runs\\deepseek-rrf\\checks\\task-0-attempt-1.log",
+  "passed": true,
+  "executor": "docker"
+}

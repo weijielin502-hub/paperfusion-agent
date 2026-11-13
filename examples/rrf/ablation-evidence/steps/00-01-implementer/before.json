@@ -1,0 +1,3 @@
+{
+  "fusion.py": "\"\"\"Existing search application: initially return the first retriever's ranking.\"\"\"\n\n\ndef fuse(rankings, k=60, limit=None):\n    documents = list(rankings[0]) if rankings else []\n    return documents if limit is None else documents[:limit]\n\n\ndef scores(rankings, k=60):\n    return {doc: 1.0 for doc in fuse(rankings, k)}\n"
+}

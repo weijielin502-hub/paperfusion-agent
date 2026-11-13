@@ -1,0 +1,20 @@
+{
+  "title": "Reciprocal Rank Fusion outperforms Condorcet and individual Rank Learning Methods",
+  "authors": ["G. V. Cormack", "C. L. A. Clarke", "Stefan Büttcher"],
+  "year": 2009,
+  "source_url": "https://plg.uwaterloo.ca/~gvcormac/cormacksigir09-rrf.pdf",
+  "evidence_type": "Maintainer-written method notes, verified against the original paper; not the full paper and not P2C output",
+  "body_text": [
+    {"section": "1. Reciprocal Rank Fusion, page 1", "text": "Each ranked document receives the sum of 1/(k+rank) across the input rankings. Ranking positions start at one. The study fixes k to 60. The resulting scores determine descending document order."},
+    {"section": "Project adaptations", "text": "The app accepts truncated rankings. A missing document contributes zero for that list. Within a list, repeated document IDs contribute only at their first position, retaining the original positions of subsequent IDs. Ties use ascending document ID. These input-handling choices extend the paper's permutation formulation."}
+  ],
+  "implementation_contract": {
+    "file": "fusion.py",
+    "scores": "scores(rankings, k=60) returns dict[str,float]",
+    "fuse": "fuse(rankings, k=60, limit=None) returns ordered list[str]",
+    "inputs": "rankings is an iterable of ranked lists of string document IDs; accept empty lists",
+    "validation": "k must be finite positive int/float and not bool; limit must be None or a nonnegative integer and not bool; invalid values raise ValueError",
+    "integration": "Preserve the existing search_app.search_results caller and its return schema"
+  },
+  "evaluation_scope": "Method implementation and integration on synthetic rankings. Not a reproduction of the paper's TREC or LETOR scores."
+}

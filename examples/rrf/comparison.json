@@ -1,0 +1,18 @@
+{
+  "deepseek-rrf": {
+    "status": "completed",
+    "attempts": 1,
+    "model_calls": 15,
+    "input_tokens": 43566,
+    "output_tokens": 6038,
+    "acceptance_passed": true
+  },
+  "deepseek-rrf-ablation": {
+    "status": "completed",
+    "attempts": 1,
+    "model_calls": 3,
+    "input_tokens": 8242,
+    "output_tokens": 1199,
+    "acceptance_passed": true
+  }
+}

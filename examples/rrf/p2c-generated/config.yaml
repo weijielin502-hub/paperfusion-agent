@@ -1,0 +1,57 @@
+## config.yaml
+## Reciprocal Rank Fusion (Cormack, Clarke & Buettcher, SIGIR 2009).
+##
+## NOTE: The paper specifies NO training procedure. RRF is an unsupervised,
+## parameter-light fusion method: there is no learning rate, batch size, epoch
+## count, optimizer, or trainable model. The only hyperparameter given in the
+## paper is the rank constant k, fixed to 60. Nothing below is invented: any
+## field not stated in the paper is marked as a project adaptation.
+
+fusion:
+  # Paper value: "The study fixes k to 60."
+  k: 60
+  # Ranks start at 1 ("Ranking positions start at one.").
+  rank_start: 1
+
+## Project adaptations (see implementation contract; not from the paper body).
+input_handling:
+  # Missing document in a list contributes zero for that list.
+  missing_document_contribution: 0.0
+  # Within a list, repeated IDs contribute only at their first position,
+  # and subsequent IDs keep their original positions (no renumbering).
+  dedupe_within_list: first_position
+  renumber_positions_after_dedupe: false
+  # "Ties use ascending document ID."
+  tie_break: ascending_document_id
+  # Result list is descending by fused score.
+  order: descending_score
+
+validation:
+  # k must be a finite positive int/float and not bool.
+  k_type: [int, float]
+  k_reject_bool: true
+  k_require_finite: true
+  k_require_positive: true
+  # limit must be None or a nonnegative int and not bool.
+  limit_allow_none: true
+  limit_type: int
+  limit_reject_bool: true
+  limit_require_nonnegative: true
+  error_type: ValueError
+
+## Integration surface.
+integration:
+  # Preserve the existing search_app.search_results caller and its return schema.
+  entry_point: search_app.search_results
+  schema: ordered_list_of_document_ids
+  delegate_to: fusion.fuse
+
+## Evaluation scope.
+evaluation:
+  # Method implementation and integration on synthetic rankings.
+  # NOT a reproduction of the paper's TREC or LETOR scores.
+  datasets: synthetic_rankings
+  metrics: [exact_order_match, max_abs_score_error]
+  score_tolerance: 1.0e-12
+  random_seed: null       # deterministic; no sampling is performed
+  external_datasets: none # TREC/LETOR data is not part of this scope

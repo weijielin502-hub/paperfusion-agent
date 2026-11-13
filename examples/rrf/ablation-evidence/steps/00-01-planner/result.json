@@ -1,0 +1,39 @@
+{
+  "identity": "744a92a2d875d7482843291d96247c0589cdd1484219081b5f33701b95e6194f",
+  "result": {
+    "summary": "The project has two files: fusion.py (a stub that just returns the first ranking, with a placeholder scores()) and search_app.py (the caller, which imports fusion.fuse and must not change). The work is confined to fusion.py: implement reciprocal rank fusion with validation, truncation handling, within-list dedupe with position preservation, and tie-breaking by ascending document ID, keeping fuse/scores signatures and the existing search_results return schema intact. This is a small, single-file change, so direct implementation is appropriate.",
+    "tasks": [
+      {
+        "id": "rrf-fusion",
+        "title": "Implement reciprocal rank fusion in fusion.py",
+        "strategy": "direct",
+        "files": [
+          "fusion.py"
+        ],
+        "depends_on": [],
+        "specification": "Replace the stub implementation in fusion.py, keeping the module usable by `from fusion import fuse` for search_app.py.\n\nValidation (raise ValueError on invalid input):\n- k must be a finite positive int or float and not a bool (reject True/False, NaN, inf, 0, negatives, strings, None).\n- limit must be None or a nonnegative int and not a bool (reject floats, negatives, bools).\n- Perform validation before any iteration/consumption work so errors surface deterministically.\n\nInput handling:\n- rankings is an iterable of ranked lists of string document IDs; support empty rankings iterables and empty inner lists. Rankings should be materialized once (e.g. list(rankings)) so generators work and are not consumed twice.\n- Within each list, a repeated document ID contributes score only at its first occurrence position; later duplicates are ignored and do NOT shift the retained positions of subsequent IDs (i.e. rank = index+1 in the original list, using first-occurrence positions only).\n- Rankings are truncated, so documents missing from a list contribute zero for that list.\n\nScoring:\n- scores(rankings, k=60) -> dict[str, float]: for each document, sum over input lists that contain it of 1/(k + rank) where rank starts at 1 (first position = 1). Use float arithmetic; k may be int or float. Documents with no contribution should not appear in the result (only observed documents are keys).\n\nFusing:\n- fuse(rankings, k=60, limit=None) -> list[str]: compute scores, order documents by descending score with ties broken by ascending document ID (plain string comparison), then apply limit when not None (limit=0 yields empty list, limit larger than the number of documents returns all).\n- fuse must not mutate the input rankings and must not depend on list identity/ordering quirks beyond the specified rules.\n- scores and fuse should share the same ranking computation so they stay consistent (e.g. fuse calls scores or an internal helper).\n\nIntegration:\n- Do not modify search_app.py; it calls fuse([keyword_ids, semantic_ids], limit=limit) and must keep working unchanged, returning {\"documents\": [...], \"method\": \"fusion\"}.\n- Keep public names scores and fuse with the exact parameter names/defaults (rankings, k=60, limit=None). Add a brief module docstring describing RRF.",
+        "acceptance": [
+          "`from fusion import fuse, scores` on the stub file is replaced by a real RRF implementation; `import search_app` still works unchanged and `search_app.search_results(['a','b'], ['b','c'], limit=2)` returns a dict with key 'documents' (a list of 2 strings, 'b' first) and 'method' == 'fusion'.",
+          "scores([['a','b','c'], ['b','c','a']], k=60) gives {'a': 1/61 + 1/63, 'b': 1/62 + 1/61, 'c': 1/63 + 1/62} within floating-point tolerance.",
+          "fuse([['a','b','c'], ['b','c','a']], k=60) returns ['b','a','c'] (descending score, ascending ID on ties).",
+          "Truncated lists: fuse([['x','y'], ['x']]) == ['x','y'] and a document absent from a list gets no contribution from it.",
+          "Duplicate ID in a list: scores([['a','a','b']]) == {'a': 1/61, 'b': 1/63} (position of 'b' unaffected by the dropped duplicate).",
+          "Tie-breaking: fuse([['d','a'], ['a','d']]) returns ['a','d'] since scores tie and ascending ID wins.",
+          "limit behavior: fuse(rankings, limit=0) == [], limit=None returns all ordered documents, and limit beyond length returns the full ordering.",
+          "Empty inputs: scores([]) == {}, fuse([]) == [], and empty inner lists like fuse([[], ['a']]) == ['a'].",
+          "Generators/iterables are accepted: fuse(iter([['a','b'],['b']])) works, matching the list-input result.",
+          "Validation raises ValueError for k in {0, -1, True, False, float('nan'), float('inf'), None, '60'} and for limit in {-1, True, False, 2.5, '3'}; valid k=60 and k=60.5 and limit=0 work.",
+          "Inputs are not mutated by fuse/scores (original inner lists and their order preserved after calls)."
+        ],
+        "paper_refs": [
+          "1. Reciprocal Rank Fusion, page 1",
+          "Project adaptations"
+        ]
+      }
+    ]
+  },
+  "manifest": {
+    "fusion.py": "560df28b67879b9e035d90c09ad927c4add37ffb791a2195b72779f1b07e4b50",
+    "search_app.py": "21b0147f4c059c8df547b8cae5c360cc2465ff51348f0c24cfd1101c3564127f"
+  }
+}

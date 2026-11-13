@@ -1,0 +1,10 @@
+{
+  "summary": "Integrate RRF into the existing search application while preserving the caller's interface.",
+  "tasks": [{
+    "id": "rrf", "title": "Implement reciprocal rank fusion", "strategy": "direct", "files": ["fusion.py"],
+    "depends_on": [],
+    "specification": "Implement scores and fuse per the supplied paper evidence and project contract. Use one-based rank and k=60, aggregate cross-list contributions, keep only the first occurrence per list at its original position, sort ties by document ID, validate k and limit, preserve search_app integration.",
+    "acceptance": ["Exact hand-calculated score tests", "Empty, duplicate and invalid parameter tests", "Existing search_app caller continues to work"],
+    "paper_refs": ["Section 1, page 1: RRF scoring formula and k=60", "Project adaptations in paper.json"]
+  }]
+}

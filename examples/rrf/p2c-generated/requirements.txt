@@ -1,0 +1,36 @@
+## requirements.txt
+##
+## Reciprocal Rank Fusion (Cormack, Clarke & Buettcher, SIGIR 2009) reproduction.
+##
+## This project reproduces the RRF *method* and its integration into
+## search_app.search_results on synthetic rankings only. It does NOT reproduce
+## the paper's TREC/LETOR empirical results, which are not available in the
+## supplied material.
+##
+## Configuration reference (config.yaml):
+##   fusion.k = 60
+##   fusion.rank_start = 1
+##   input_handling.tie_break = ascending_document_id
+##   input_handling.order = descending_score
+##   validation.error_type = ValueError
+##   integration.entry_point = search_app.search_results
+##   integration.delegate_to = fusion.fuse
+##   evaluation.datasets = synthetic_rankings
+##   evaluation.score_tolerance = 1.0e-12
+##
+## RRF is unsupervised and parameter-light: there is NO training procedure.
+## There is no learning rate, batch size, epoch count, optimizer, or trainable
+## model. The only hyperparameter is the rank constant k, fixed to 60.
+##
+## Runtime uses ONLY the Python standard library (math, typing).
+## The single test dependency is pytest.
+##
+## Required packages:
+pytest==8.2.0
+
+## Required other language third-party packages:
+##   No third-party dependencies required.
+##
+## Standard-library modules used at runtime by the design:
+##   math    -> math.isfinite for k validation
+##   typing  -> annotations (Iterable, Dict, List, Optional, Union, Any)

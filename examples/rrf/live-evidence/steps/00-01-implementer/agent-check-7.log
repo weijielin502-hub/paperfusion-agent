@@ -1,0 +1,14 @@
+test_default_and_custom_k (__main__.Acceptance.test_default_and_custom_k) ... ok
+test_duplicates_preserve_original_positions (__main__.Acceptance.test_duplicates_preserve_original_positions) ... ok
+test_empty (__main__.Acceptance.test_empty) ... ok
+test_existing_caller (__main__.Acceptance.test_existing_caller) ... ok
+test_hand_calculated_scores (__main__.Acceptance.test_hand_calculated_scores) ... ok
+test_invalid_k (__main__.Acceptance.test_invalid_k) ... ok
+test_limits (__main__.Acceptance.test_limits) ... ok
+test_ties (__main__.Acceptance.test_ties) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.001s
+
+OK
+METRICS_JSON={"dataset": "four synthetic queries; no statistical claim", "paper_benchmark_reproduced": false, "tests": 8, "queries": [{"query": 0, "first_retriever_ndcg3": 0.7363636171343382, "rrf_ndcg3": 0.9721212198129313}, {"query": 1, "first_retriever_ndcg3": 1.0, "rrf_ndcg3": 0.9721212198129313}, {"query": 2, "first_retriever_ndcg3": 0.8339912323981488, "rrf_ndcg3": 0.8339912323981488}, {"query": 3, "first_retriever_ndcg3": 0.6653152460429406, "rrf_ndcg3": 0.606422698504514}]}

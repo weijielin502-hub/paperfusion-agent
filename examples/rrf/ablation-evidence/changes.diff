@@ -1,0 +1,78 @@
+--- before/fusion.py
++++ after/fusion.py
+@@ -1,10 +1,68 @@
+-"""Existing search application: initially return the first retriever's ranking."""
++"""Reciprocal Rank Fusion (RRF).
++
++Each ranked document receives the sum of 1/(k + rank) across the input
++rankings, with ranking positions starting at one (Cormack, Clarke & Buttcher,
++2009). The resulting scores determine descending document order.
++
++Project adaptations: rankings may be truncated (a missing document contributes
++zero for that list); within a list a repeated document ID contributes only at
++its first position, and later duplicates do not shift the retained positions of
++subsequent IDs; ties are broken by ascending document ID.
++"""
++import math
++
++__all__ = ["scores", "fuse"]
++
++
++def _is_real_number(value):
++    return isinstance(value, (int, float)) and not isinstance(value, bool)
++
++
++def _validate_k(k):
++    if not _is_real_number(k):
++        raise ValueError("k must be a finite positive int or float")
++    if isinstance(k, float) and (math.isnan(k) or math.isinf(k)):
++        raise ValueError("k must be a finite positive int or float")
++    if k <= 0:
++        raise ValueError("k must be a finite positive int or float")
++
++
++def _validate_limit(limit):
++    if limit is None:
++        return
++    if not isinstance(limit, int) or isinstance(limit, bool):
++        raise ValueError("limit must be None or a nonnegative int")
++    if limit < 0:
++        raise ValueError("limit must be None or a nonnegative int")
++
++
++def _score_map(rankings, k):
++    """Internal helper: build {doc: rrf_score} for materialized rankings."""
++    result = {}
++    for ranking in rankings:
++        seen = set()
++        for index, doc in enumerate(ranking):
++            if doc in seen:
++                continue
++            seen.add(doc)
++            result[doc] = result.get(doc, 0.0) + 1.0 / (k + (index + 1))
++    return result
++
++
++def scores(rankings, k=60):
++    """Return {document_id: fused_score} for the given ranked lists."""
++    _validate_k(k)
++    materialized = list(rankings)
++    return _score_map(materialized, k)
+ 
+ 
+ def fuse(rankings, k=60, limit=None):
+-    documents = list(rankings[0]) if rankings else []
+-    return documents if limit is None else documents[:limit]
+-
+-
+-def scores(rankings, k=60):
+-    return {doc: 1.0 for doc in fuse(rankings, k)}
++    """Return document IDs ordered by descending RRF score, ties ascending by ID."""
++    _validate_k(k)
++    _validate_limit(limit)
++    materialized = list(rankings)
++    scored = _score_map(materialized, k)
++    ordered = sorted(scored, key=lambda doc: (-scored[doc], doc))
++    if limit is not None:
++        ordered = ordered[:limit]
++    return ordered

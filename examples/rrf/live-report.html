@@ -1,0 +1,192 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PaperFusion · Run evidence</title><style>
+:root{--ink:#142438;--muted:#617080;--line:#dce3e8;--paper:#f4f6f8;--accent:#b84c28;--teal:#16756b}*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.6 system-ui,sans-serif}header{background:var(--ink);color:#fff;padding:44px max(6vw,24px)}.wordmark{letter-spacing:.2em;font-size:12px;color:#a4c4ce}h1{font-size:clamp(32px,5vw,56px);line-height:1.1;letter-spacing:-.04em;margin:18px 0}header p{max-width:800px;color:#c5d3dc}.tag{font-size:11px;letter-spacing:.12em;border:1px solid #567084;padding:5px 10px;border-radius:20px}main{max-width:1180px;margin:auto;padding:28px 24px 60px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:-2px}.stat,section{background:white;border:1px solid var(--line);border-radius:12px;padding:22px}.stat strong{display:block;font-size:24px;overflow-wrap:anywhere}.stat span,.muted{color:var(--muted);font-size:13px}section{margin-top:22px}h2{font-size:20px;margin:0 0 14px}.eyebrow{color:var(--accent);font-size:11px;letter-spacing:.12em;font-weight:700}.grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}.step{border-top:1px solid var(--line);padding:13px 0}summary{cursor:pointer;display:flex;justify-content:space-between;gap:10px;align-items:center}.badge{font-size:11px;font-weight:600;padding:3px 9px;background:#eaf3f0;border-radius:20px;color:var(--teal)}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.6 ui-monospace,monospace;background:#f1f4f6;padding:16px;border-radius:6px;max-height:420px;overflow:auto}a{color:var(--teal)}table{width:100%;border-collapse:collapse;text-align:left}th,td{padding:12px;border-bottom:1px solid var(--line)}th{font-size:12px;color:var(--muted)}.delta{font-family:monospace}ul{padding-left:20px}li{margin:12px 0}li span{display:block;color:var(--muted);font-size:12px}.flow{font-family:monospace;line-height:2;color:var(--teal)}footer{margin-top:24px;color:var(--muted);font-size:12px}@media(max-width:750px){.stats{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}section{padding:16px}table{font-size:12px}th,td{padding:8px}}
+</style></head><body><header><div class="wordmark">PAPERFUSION / ENGINEERING EVIDENCE</div><h1>From paper to working code.</h1><p>Integrate reciprocal rank fusion into the existing search application. Preserve search_app.py and its public interface. Implement the supplied paper contract in fusion.py.</p><span class="tag">LIVE MODEL RUN</span></header><main>
+<div class="stats"><div class="stat"><span>Run status</span><strong>completed</strong></div><div class="stat"><span>Model calls</span><strong>15</strong></div><div class="stat"><span>Reported tokens</span><strong>49,604</strong></div><div class="stat"><span>Execution environment</span><strong>docker</strong></div></div>
+<section><div class="eyebrow">01 / DELIVERY CONTRACT</div><h2>The project has two files: fusion.py (a stub that just returns the first ranking, with a placeholder scores()) and search_app.py (the caller, which imports fusion.fuse and must not change). The work is confined to fusion.py: implement reciprocal rank fusion with validation, truncation handling, within-list dedupe with position preservation, and tie-breaking by ascending document ID, keeping fuse/scores signatures and the existing search_results return schema intact. This is a small, single-file change, so direct implementation is appropriate.</h2><div class="flow">Paper → Plan → Implement → Test → Review → Align → Evaluate</div><ul><li><strong>Implement reciprocal rank fusion in fusion.py</strong><span>direct · fusion.py</span></li></ul><p class="muted">Model: deepseek-flash · Review gates: enabled · USD cost unknown: provider rates were not configured.</p></section>
+<div class="grid"><section><div class="eyebrow">02 / AGENT DECISIONS</div><h2>Inspect every role</h2><details class="step"><summary><span>00-01-implementer</span><b class="badge">done</b></summary><p>Replaced the fusion.py stub with a real reciprocal rank fusion implementation. `scores` and `fuse` validate k and limit up front, materialize rankings once (generator-safe), honor first-occurrence positions for duplicate IDs without shifting later positions, sum 1/(k+rank) with rank starting at 1, and order by descending score with ascending document ID tie-break before applying an optional limit. search_app.py was left untouched and still returns {&quot;documents&quot;: [...], &quot;method&quot;: &quot;fusion&quot;}.</p><pre>{
+  &quot;verdict&quot;: &quot;done&quot;,
+  &quot;summary&quot;: &quot;Replaced the fusion.py stub with a real reciprocal rank fusion implementation. `scores` and `fuse` validate k and limit up front, materialize rankings once (generator-safe), honor first-occurrence positions for duplicate IDs without shifting later positions, sum 1/(k+rank) with rank starting at 1, and order by descending score with ascending document ID tie-break before applying an optional limit. search_app.py was left untouched and still returns {\&quot;documents\&quot;: [...], \&quot;method\&quot;: \&quot;fusion\&quot;}.&quot;,
+  &quot;findings&quot;: [
+    &quot;Validation rejects bool/NaN/inf/non-positive k and bool/negative/non-int limit with ValueError before consuming inputs.&quot;,
+    &quot;Truncated rankings contribute zero for absent documents; duplicate IDs score only at their first position while later IDs keep original ranks.&quot;,
+    &quot;fuse delegates to a shared internal scoring helper so scores and fuse stay consistent.&quot;,
+    &quot;All eight acceptance tests pass, including the unchanged search_app caller.&quot;
+  ],
+  &quot;evidence&quot;: [
+    &quot;run_checks: all 8 acceptance tests OK (default_and_custom_k, duplicates_preserve_original_positions, empty, existing_caller, hand_calculated_scores, invalid_k, limits, ties)&quot;,
+    &quot;fusion.py implements module docstring, _validate_k, _validate_limit, _score, scores(rankings, k=60), fuse(rankings, k=60, limit=None)&quot;,
+    &quot;search_app.search_results([&#x27;a&#x27;,&#x27;b&#x27;], [&#x27;b&#x27;,&#x27;c&#x27;], limit=2) returns {&#x27;documents&#x27;: [...], &#x27;method&#x27;: &#x27;fusion&#x27;} via the existing caller, unmodified&quot;
+  ]
+}</pre><a href="live-evidence/steps/00-01-implementer/trace.json">Tool trace ↗</a></details><details class="step"><summary><span>00-01-monitor</span><b class="badge">approved</b></summary><p>fusion.py implements the paper&#x27;s RRF formula (1/(k+rank) summed across lists, rank origin 1, k=60 default, descending score order as stated in paper section &#x27;1. Reciprocal Rank Fusion, page 1&#x27;) plus the documented project adaptations (truncation = zero contribution, first-occurrence-only duplicate handling without shifting later ranks, ascending-ID tie-break, from &#x27;Project adaptations&#x27;). Validation of k (bools, non-numerics, non-finite, non-positive) and limit (bools, non-ints, negatives) runs before list(rankings) in both scores() and fuse(), satisfying the implementation_contract validation clause and avoiding premature generator consumption. search_app.py is untouched and its single caller fuse([keyword_ids, semantic_ids], limit=limit) with return schema {&#x27;documents&#x27;: [...], &#x27;method&#x27;: &#x27;fusion&#x27;} is preserved. Scores and fuse share _score, no input mutation (seen/enumerate over original list, no in-place edits), empty lists/rankings and generators work, limit=0 -&gt; [] and oversize limits -&gt; full ordering. Test suite passes 8/8 with paper_benchmark_reproduced=false, matching the stated evaluation_scope (synthetic rankings, no TREC/LETOR reproduction). Only minor non-blocking notes: a non-iterable inner ranking raises TypeError rather than ValueError, which the contract does not require to be ValueError since inputs are defined as ranked lists; and search_app&#x27;s default limit=5 vs the contract&#x27;s limit=None default is in the pre-existing caller, which the task explicitly says must not be modified. No material unexplained deviations found.</p><pre>{
+  &quot;verdict&quot;: &quot;approved&quot;,
+  &quot;summary&quot;: &quot;fusion.py implements the paper&#x27;s RRF formula (1/(k+rank) summed across lists, rank origin 1, k=60 default, descending score order as stated in paper section &#x27;1. Reciprocal Rank Fusion, page 1&#x27;) plus the documented project adaptations (truncation = zero contribution, first-occurrence-only duplicate handling without shifting later ranks, ascending-ID tie-break, from &#x27;Project adaptations&#x27;). Validation of k (bools, non-numerics, non-finite, non-positive) and limit (bools, non-ints, negatives) runs before list(rankings) in both scores() and fuse(), satisfying the implementation_contract validation clause and avoiding premature generator consumption. search_app.py is untouched and its single caller fuse([keyword_ids, semantic_ids], limit=limit) with return schema {&#x27;documents&#x27;: [...], &#x27;method&#x27;: &#x27;fusion&#x27;} is preserved. Scores and fuse share _score, no input mutation (seen/enumerate over original list, no in-place edits), empty lists/rankings and generators work, limit=0 -&gt; [] and oversize limits -&gt; full ordering. Test suite passes 8/8 with paper_benchmark_reproduced=false, matching the stated evaluation_scope (synthetic rankings, no TREC/LETOR reproduction). Only minor non-blocking notes: a non-iterable inner ranking raises TypeError rather than ValueError, which the contract does not require to be ValueError since inputs are defined as ranked lists; and search_app&#x27;s default limit=5 vs the contract&#x27;s limit=None default is in the pre-existing caller, which the task explicitly says must not be modified. No material unexplained deviations found.&quot;,
+  &quot;findings&quot;: [
+    &quot;Paper formula (section &#x27;1. Reciprocal Rank Fusion, page 1&#x27;): fusion.py lines in _score compute contribution = 1.0/(k + (index + 1)), i.e. rank origin 1, summed into result[doc]; matches the paper text and the implementation_contract &#x27;scores&#x27; signature/public default k=60.&quot;,
+    &quot;Default k=60 appears in both scores(rankings, k=60) and fuse(rankings, k=60, limit=None) in fusion.py, matching paper &#x27;The study fixes k to 60&#x27; and the required exact parameter names/defaults.&quot;,
+    &quot;Project adaptation &#x27;missing document contributes zero&#x27;: _score simply skips absent docs, so truncated lists contribute nothing; verified by acceptance behavior fuse([[&#x27;x&#x27;,&#x27;y&#x27;],[&#x27;x&#x27;]]) == [&#x27;x&#x27;,&#x27;y&#x27;] via the passing test_default_and_custom_k / test_truncation coverage in verification output.&quot;,
+    &quot;Project adaptation &#x27;repeated document IDs contribute only at their first position, retaining original positions of subsequent IDs&#x27;: _score uses a per-list seen set with enumerate over the original ranking, so &#x27;b&#x27; in [&#x27;a&#x27;,&#x27;a&#x27;,&#x27;b&#x27;] keeps index 2 -&gt; 1/63; matches the contract example scores([[&#x27;a&#x27;,&#x27;a&#x27;,&#x27;b&#x27;]]) == {&#x27;a&#x27;: 1/61, &#x27;b&#x27;: 1/63} and the test_duplicates_preserve_original_positions pass.&quot;,
+    &quot;Tie-breaking adaptation (ascending doc ID): fuse sorts with key=lambda doc: (-combined[doc], doc) at the end of fusion.py, giving descending score with plain-string ascending tie-break; matches &#x27;Ties use ascending document ID&#x27; and acceptance fuse([[&#x27;d&#x27;,&#x27;a&#x27;],[&#x27;a&#x27;,&#x27;d&#x27;]]) == [&#x27;a&#x27;,&#x27;d&#x27;] (test_ties ok).&quot;,
+    &quot;limit semantics: &#x27;ordered if limit is None else ordered[:limit]&#x27; yields [] for limit=0 and full ordering for oversized limits, matching contract &#x27;limit must be None or a nonnegative int&#x27; and acceptance limit behavior (test_limits ok).&quot;,
+    &quot;Validation ordering: scores() calls _validate_k before list(rankings); fuse() calls _validate_k then _validate_limit before list(rankings). This satisfies the contract&#x27;s &#x27;Perform validation before any iteration/consumption work&#x27; and the no-premature-consumption requirement. Validation rejects bool before int check (isinstance(k, bool) short-circuit), and NaN/inf handled via math.isfinite for floats; k=60.5 accepted (test_invalid_k ok).&quot;,
+    &quot;Consistency requirement: fuse delegates to the shared _score helper also used by scores(), satisfying &#x27;scores and fuse should share the same ranking computation&#x27;.&quot;,
+    &quot;No mutation: _score only reads inner lists and builds a fresh dict; fuse sorts a list of keys, not the input. Acceptance &#x27;Inputs are not mutated&#x27; holds (also consistent with test pass).&quot;,
+    &quot;Integration: search_app.py is unmodified and imports fuse from fusion; search_results returns {&#x27;documents&#x27;: fuse([...], limit=limit), &#x27;method&#x27;: &#x27;fusion&#x27;}, matching the integration clause (test_existing_caller ok). The caller&#x27;s own default limit=5 is pre-existing and outside the changed file.&quot;,
+    &quot;Non-blocking: a non-iterable inner ranking raises TypeError, not ValueError; the contract defines rankings as &#x27;an iterable of ranked lists&#x27;, so this is an out-of-contract input, not a deviation. Likewise k validation returns early for non-finite floats only when isinstance(k, float), which is correct since ints are always finite.&quot;,
+    &quot;Evidence discipline: verification output records paper_benchmark_reproduced=false and the metrics note &#x27;four synthetic queries; no statistical claim&#x27;, consistent with evaluation_scope &#x27;Method implementation and integration on synthetic rankings. Not a reproduction of the paper&#x27;s TREC or LETOR scores.&#x27; The nDCG figures are project-side observations, not paper benchmarks.&quot;
+  ],
+  &quot;evidence&quot;: [
+    &quot;fusion.py, module docstring: states the 1/(k+rank) sum, rank starting at one, k=60, dimensionless truncation, first-occurrence-only duplicate scoring without shifting subsequent IDs, and ascending-ID tie-break — matching &#x27;1. Reciprocal Rank Fusion, page 1&#x27; and &#x27;Project adaptations&#x27;.&quot;,
+    &quot;fusion.py, _validate_k: rejects bool via isinstance(k, bool), rejects non-int/float, rejects non-finite floats via math.isfinite, rejects k &lt;= 0 — matches contract validation clause.&quot;,
+    &quot;fusion.py, _validate_limit: returns None for None, rejects bool and non-int, rejects negative — matches &#x27;limit must be None or a nonnegative int and not bool&#x27;.&quot;,
+    &quot;fusion.py, _score: per-ranking seen set + enumerate; contribution = 1.0 / (k + (index + 1)); accumulation into result — matches paper scoring and the duplicate/truncation adaptations.&quot;,
+    &quot;fusion.py, scores: _validate_k(k) then materialized = list(rankings) then _score(materialized, k) — validation precedes materialization; single materialization for generators.&quot;,
+    &quot;fusion.py, fuse: _validate_k(k); _validate_limit(limit); materialized = list(rankings); combined = _score(materialized, k); ordered = sorted(combined, key=lambda doc: (-combined[doc], doc)); return ordered if limit is None else ordered[:limit] — matches scoring, ordering, tie-break and limit contract.&quot;,
+    &quot;search_app.py: from fusion import fuse; search_results returns {&#x27;documents&#x27;: fuse([keyword_ids, semantic_ids], limit=limit), &#x27;method&#x27;: &#x27;fusion&#x27;} — caller and return schema preserved as required by the implementation_contract integration clause.&quot;,
+    &quot;Verification output: 8/8 acceptance tests OK (hand-calculated scores, duplicates, ties, limits, invalid k, empty, existing caller, default/custom k), METRICS_JSON paper_benchmark_reproduced=false with &#x27;four synthetic queries; no statistical claim&#x27; — indicating synthetic scope only, not benchmark reproduction.&quot;
+  ]
+}</pre><a href="live-evidence/steps/00-01-monitor/trace.json">Tool trace ↗</a></details><details class="step"><summary><span>00-01-planner</span><b class="badge">plan</b></summary><p>The project has two files: fusion.py (a stub that just returns the first ranking, with a placeholder scores()) and search_app.py (the caller, which imports fusion.fuse and must not change). The work is confined to fusion.py: implement reciprocal rank fusion with validation, truncation handling, within-list dedupe with position preservation, and tie-breaking by ascending document ID, keeping fuse/scores signatures and the existing search_results return schema intact. This is a small, single-file change, so direct implementation is appropriate.</p><pre>{
+  &quot;summary&quot;: &quot;The project has two files: fusion.py (a stub that just returns the first ranking, with a placeholder scores()) and search_app.py (the caller, which imports fusion.fuse and must not change). The work is confined to fusion.py: implement reciprocal rank fusion with validation, truncation handling, within-list dedupe with position preservation, and tie-breaking by ascending document ID, keeping fuse/scores signatures and the existing search_results return schema intact. This is a small, single-file change, so direct implementation is appropriate.&quot;,
+  &quot;tasks&quot;: [
+    {
+      &quot;id&quot;: &quot;rrf-fusion&quot;,
+      &quot;title&quot;: &quot;Implement reciprocal rank fusion in fusion.py&quot;,
+      &quot;strategy&quot;: &quot;direct&quot;,
+      &quot;files&quot;: [
+        &quot;fusion.py&quot;
+      ],
+      &quot;depends_on&quot;: [],
+      &quot;specification&quot;: &quot;Replace the stub implementation in fusion.py, keeping the module usable by `from fusion import fuse` for search_app.py.\n\nValidation (raise ValueError on invalid input):\n- k must be a finite positive int or float and not a bool (reject True/False, NaN, inf, 0, negatives, strings, None).\n- limit must be None or a nonnegative int and not a bool (reject floats, negatives, bools).\n- Perform validation before any iteration/consumption work so errors surface deterministically.\n\nInput handling:\n- rankings is an iterable of ranked lists of string document IDs; support empty rankings iterables and empty inner lists. Rankings should be materialized once (e.g. list(rankings)) so generators work and are not consumed twice.\n- Within each list, a repeated document ID contributes score only at its first occurrence position; later duplicates are ignored and do NOT shift the retained positions of subsequent IDs (i.e. rank = index+1 in the original list, using first-occurrence positions only).\n- Rankings are truncated, so documents missing from a list contribute zero for that list.\n\nScoring:\n- scores(rankings, k=60) -&gt; dict[str, float]: for each document, sum over input lists that contain it of 1/(k + rank) where rank starts at 1 (first position = 1). Use float arithmetic; k may be int or float. Documents with no contribution should not appear in the result (only observed documents are keys).\n\nFusing:\n- fuse(rankings, k=60, limit=None) -&gt; list[str]: compute scores, order documents by descending score with ties broken by ascending document ID (plain string comparison), then apply limit when not None (limit=0 yields empty list, limit larger than the number of documents returns all).\n- fuse must not mutate the input rankings and must not depend on list identity/ordering quirks beyond the specified rules.\n- scores and fuse should share the same ranking computation so they stay consistent (e.g. fuse calls scores or an internal helper).\n\nIntegration:\n- Do not modify search_app.py; it calls fuse([keyword_ids, semantic_ids], limit=limit) and must keep working unchanged, returning {\&quot;documents\&quot;: [...], \&quot;method\&quot;: \&quot;fusion\&quot;}.\n- Keep public names scores and fuse with the exact parameter names/defaults (rankings, k=60, limit=None). Add a brief module docstring describing RRF.&quot;,
+      &quot;acceptance&quot;: [
+        &quot;`from fusion import fuse, scores` on the stub file is replaced by a real RRF implementation; `import search_app` still works unchanged and `search_app.search_results([&#x27;a&#x27;,&#x27;b&#x27;], [&#x27;b&#x27;,&#x27;c&#x27;], limit=2)` returns a dict with key &#x27;documents&#x27; (a list of 2 strings, &#x27;b&#x27; first) and &#x27;method&#x27; == &#x27;fusion&#x27;.&quot;,
+        &quot;scores([[&#x27;a&#x27;,&#x27;b&#x27;,&#x27;c&#x27;], [&#x27;b&#x27;,&#x27;c&#x27;,&#x27;a&#x27;]], k=60) gives {&#x27;a&#x27;: 1/61 + 1/63, &#x27;b&#x27;: 1/62 + 1/61, &#x27;c&#x27;: 1/63 + 1/62} within floating-point tolerance.&quot;,
+        &quot;fuse([[&#x27;a&#x27;,&#x27;b&#x27;,&#x27;c&#x27;], [&#x27;b&#x27;,&#x27;c&#x27;,&#x27;a&#x27;]], k=60) returns [&#x27;b&#x27;,&#x27;a&#x27;,&#x27;c&#x27;] (descending score, ascending ID on ties).&quot;,
+        &quot;Truncated lists: fuse([[&#x27;x&#x27;,&#x27;y&#x27;], [&#x27;x&#x27;]]) == [&#x27;x&#x27;,&#x27;y&#x27;] and a document absent from a list gets no contribution from it.&quot;,
+        &quot;Duplicate ID in a list: scores([[&#x27;a&#x27;,&#x27;a&#x27;,&#x27;b&#x27;]]) == {&#x27;a&#x27;: 1/61, &#x27;b&#x27;: 1/63} (position of &#x27;b&#x27; unaffected by the dropped duplicate).&quot;,
+        &quot;Tie-breaking: fuse([[&#x27;d&#x27;,&#x27;a&#x27;], [&#x27;a&#x27;,&#x27;d&#x27;]]) returns [&#x27;a&#x27;,&#x27;d&#x27;] since scores tie and ascending ID wins.&quot;,
+        &quot;limit behavior: fuse(rankings, limit=0) == [], limit=None returns all ordered documents, and limit beyond length returns the full ordering.&quot;,
+        &quot;Empty inputs: scores([]) == {}, fuse([]) == [], and empty inner lists like fuse([[], [&#x27;a&#x27;]]) == [&#x27;a&#x27;].&quot;,
+        &quot;Generators/iterables are accepted: fuse(iter([[&#x27;a&#x27;,&#x27;b&#x27;],[&#x27;b&#x27;]])) works, matching the list-input result.&quot;,
+        &quot;Validation raises ValueError for k in {0, -1, True, False, float(&#x27;nan&#x27;), float(&#x27;inf&#x27;), None, &#x27;60&#x27;} and for limit in {-1, True, False, 2.5, &#x27;3&#x27;}; valid k=60 and k=60.5 and limit=0 work.&quot;,
+        &quot;Inputs are not mutated by fuse/scores (original inner lists and their order preserved after calls).&quot;
+      ],
+      &quot;paper_refs&quot;: [
+        &quot;1. Reciprocal Rank Fusion, page 1&quot;,
+        &quot;Project adaptations&quot;
+      ]
+    }
+  ]
+}</pre><a href="live-evidence/steps/00-01-planner/trace.json">Tool trace ↗</a></details><details class="step"><summary><span>00-01-reviewer</span><b class="badge">approved</b></summary><p>fusion.py implements the RRF contract faithfully: 1/(k+rank) summed across lists with rank starting at 1, first-occurrence-only scoring for duplicates without shifting later positions, truncated lists contributing zero, descending-score ordering with ascending-ID tie-breaks, and limit truncation. Validation of k (bools, non-numerics, non-finite, non-positive) and limit (bools, non-ints, negatives) occurs before rankings materialization, so errors are deterministic and generators are not consumed. search_app.py is untouched and its caller/return schema still work. Scores and fuse share the single _score helper, inputs are not mutated, and the module docstring documents RRF plus the project adaptations.</p><pre>{
+  &quot;verdict&quot;: &quot;approved&quot;,
+  &quot;summary&quot;: &quot;fusion.py implements the RRF contract faithfully: 1/(k+rank) summed across lists with rank starting at 1, first-occurrence-only scoring for duplicates without shifting later positions, truncated lists contributing zero, descending-score ordering with ascending-ID tie-breaks, and limit truncation. Validation of k (bools, non-numerics, non-finite, non-positive) and limit (bools, non-ints, negatives) occurs before rankings materialization, so errors are deterministic and generators are not consumed. search_app.py is untouched and its caller/return schema still work. Scores and fuse share the single _score helper, inputs are not mutated, and the module docstring documents RRF plus the project adaptations.&quot;,
+  &quot;findings&quot;: [
+    &quot;Validation ordering is correct: _validate_k and _validate_limit run before list(rankings), satisfying the deterministic-error and no-premature-consumption requirement.&quot;,
+    &quot;Duplicate handling uses a per-list seen set with enumerate over the original ranking, so retained ranks are original index+1 and later duplicates do not shift subsequent IDs (scores([[&#x27;a&#x27;,&#x27;a&#x27;,&#x27;b&#x27;]]) == {&#x27;a&#x27;: 1/61, &#x27;b&#x27;: 1/63}).&quot;,
+    &quot;Ordering key (-score, doc) yields descending score with ascending plain-string tie-break, and limit=0 returns [] while oversized limits return full ordering.&quot;,
+    &quot;fuse delegates to the shared _score helper, guaranteeing consistency with scores().&quot;,
+    &quot;Non-blocking: a non-iterable inner ranking would raise TypeError instead of ValueError, but the contract defines inputs as ranked lists; the module docstring does not enumerate validation rules (cosmetic).&quot;
+  ],
+  &quot;evidence&quot;: [
+    &quot;fusion.py: _validate_k rejects bool via isinstance check first, then non-(int,float), then non-finite floats via math.isfinite, then k &lt;= 0.&quot;,
+    &quot;fusion.py: _validate_limit returns None unchanged, rejects bool and non-int, rejects negatives; fuse calls both validators before list(rankings).&quot;,
+    &quot;fusion.py _score: per-list seen set, enumerate(ranking), contribution 1.0/(k + index + 1), accumulated in dict keyed by observed docs only.&quot;,
+    &quot;fusion.py fuse: materialized = list(rankings); combined = _score(materialized, k); sorted(key=lambda doc: (-combined[doc], doc)); ordered[:limit] when limit is not None.&quot;,
+    &quot;search_app.py: search_results returns {&#x27;documents&#x27;: fuse([keyword_ids, semantic_ids], limit=limit), &#x27;method&#x27;: &#x27;fusion&#x27;} and imports fuse unchanged.&quot;,
+    &quot;Verification output: 8 tests OK including test_existing_caller, test_hand_calculated_scores, test_duplicates_preserve_original_positions, test_ties, test_limits, test_invalid_k; metrics record paper_benchmark_reproduced=false.&quot;
+  ]
+}</pre><a href="live-evidence/steps/00-01-reviewer/trace.json">Tool trace ↗</a></details></section><section><div class="eyebrow">03 / EXECUTED CHECKS</div><h2>Failures remain visible</h2><details class="step"><summary><span>task-0-attempt-1</span><b class="badge">PASS</b></summary><pre>test_default_and_custom_k (__main__.Acceptance.test_default_and_custom_k) ... ok
+test_duplicates_preserve_original_positions (__main__.Acceptance.test_duplicates_preserve_original_positions) ... ok
+test_empty (__main__.Acceptance.test_empty) ... ok
+test_existing_caller (__main__.Acceptance.test_existing_caller) ... ok
+test_hand_calculated_scores (__main__.Acceptance.test_hand_calculated_scores) ... ok
+test_invalid_k (__main__.Acceptance.test_invalid_k) ... ok
+test_limits (__main__.Acceptance.test_limits) ... ok
+test_ties (__main__.Acceptance.test_ties) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.001s
+
+OK
+METRICS_JSON={&quot;dataset&quot;: &quot;four synthetic queries; no statistical claim&quot;, &quot;paper_benchmark_reproduced&quot;: false, &quot;tests&quot;: 8, &quot;queries&quot;: [{&quot;query&quot;: 0, &quot;first_retriever_ndcg3&quot;: 0.7363636171343382, &quot;rrf_ndcg3&quot;: 0.9721212198129313}, {&quot;query&quot;: 1, &quot;first_retriever_ndcg3&quot;: 1.0, &quot;rrf_ndcg3&quot;: 0.9721212198129313}, {&quot;query&quot;: 2, &quot;first_retriever_ndcg3&quot;: 0.8339912323981488, &quot;rrf_ndcg3&quot;: 0.8339912323981488}, {&quot;query&quot;: 3, &quot;first_retriever_ndcg3&quot;: 0.6653152460429406, &quot;rrf_ndcg3&quot;: 0.606422698504514}]}
+</pre></details></section></div>
+<section><div class="eyebrow">04 / EXPERIMENT</div><h2>Measured outcomes</h2><table><tr><th>Synthetic query</th><th>Original retriever</th><th>RRF</th><th>Δ nDCG@3</th></tr><tr><td>Query 1</td><td>0.7364</td><td>0.9721</td><td class="delta">+0.2358</td></tr><tr><td>Query 2</td><td>1.0000</td><td>0.9721</td><td class="delta">-0.0279</td></tr><tr><td>Query 3</td><td>0.8340</td><td>0.8340</td><td class="delta">+0.0000</td></tr><tr><td>Query 4</td><td>0.6653</td><td>0.6064</td><td class="delta">-0.0589</td></tr></table><p class="muted">Four synthetic queries. This measures method integration, not the paper’s TREC/LETOR benchmark. Improvement is not guaranteed.</p></section>
+<section><div class="eyebrow">05 / CODE DELIVERY</div><h2>The actual change</h2><details><summary>Open unified diff</summary><pre>--- before/fusion.py
++++ after/fusion.py
+@@ -1,10 +1,69 @@
+-&quot;&quot;&quot;Existing search application: initially return the first retriever&#x27;s ranking.&quot;&quot;&quot;
++&quot;&quot;&quot;Reciprocal Rank Fusion (RRF).
++
++Each ranked document receives the sum of 1/(k + rank) across the input
++rankings, where ranking positions start at one. The study fixes k to 60 and
++orders documents by descending fused score. Truncated rankings contribute
++zero for documents they do not contain; within a list, a repeated document ID
++contributes only at its first position (later duplicate positions are ignored
++without shifting the positions of subsequent IDs). Ties are broken by
++ascending document ID.
++&quot;&quot;&quot;
++
++import math
++
++__all__ = [&quot;scores&quot;, &quot;fuse&quot;]
++
++
++def _validate_k(k):
++    if isinstance(k, bool) or not isinstance(k, (int, float)):
++        raise ValueError(&quot;k must be a finite positive int or float&quot;)
++    if isinstance(k, float) and not math.isfinite(k):
++        raise ValueError(&quot;k must be finite&quot;)
++    if k &lt;= 0:
++        raise ValueError(&quot;k must be positive&quot;)
++    return k
++
++
++def _validate_limit(limit):
++    if limit is None:
++        return None
++    if isinstance(limit, bool) or not isinstance(limit, int):
++        raise ValueError(&quot;limit must be None or a nonnegative int&quot;)
++    if limit &lt; 0:
++        raise ValueError(&quot;limit must be nonnegative&quot;)
++    return limit
++
++
++def _score(rankings, k):
++    &quot;&quot;&quot;Compute RRF scores; rankings must already be a materialized sequence.&quot;&quot;&quot;
++    result = {}
++    for ranking in rankings:
++        seen = set()
++        for index, doc in enumerate(ranking):
++            if doc in seen:
++                continue
++            seen.add(doc)
++            contribution = 1.0 / (k + (index + 1))
++            result[doc] = result.get(doc, 0.0) + contribution
++    return result
++
++
++def scores(rankings, k=60):
++    &quot;&quot;&quot;Return a dict mapping document ID to its fused reciprocal rank score.&quot;&quot;&quot;
++    _validate_k(k)
++    materialized = list(rankings)
++    return _score(materialized, k)
+ 
+ 
+ def fuse(rankings, k=60, limit=None):
+-    documents = list(rankings[0]) if rankings else []
+-    return documents if limit is None else documents[:limit]
++    &quot;&quot;&quot;Return document IDs ordered by descending fused score.
+ 
+-
+-def scores(rankings, k=60):
+-    return {doc: 1.0 for doc in fuse(rankings, k)}
++    Ties are broken by ascending document ID. ``limit`` (when not None)
++    truncates the ordered result.
++    &quot;&quot;&quot;
++    _validate_k(k)
++    _validate_limit(limit)
++    materialized = list(rankings)
++    combined = _score(materialized, k)
++    ordered = sorted(combined, key=lambda doc: (-combined[doc], doc))
++    return ordered if limit is None else ordered[:limit]
+</pre></details></section>
+<footer>PaperFusion · Persistent LangGraph workflow · Read-only review roles · Controller-owned acceptance checks.<br>Replay traces are scripted fixtures. Live model reviews are judgments, not proof of benchmark reproduction.</footer></main></body></html>

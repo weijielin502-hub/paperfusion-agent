@@ -1,0 +1,26 @@
+{
+  "identity": "297b2742bdf8d99c868d4c02467f28833956b7b1709d7e46cebfca2fa63b1acc",
+  "result": {
+    "verdict": "approved",
+    "summary": "fusion.py implements the RRF contract faithfully: 1/(k+rank) summed across lists with rank starting at 1, first-occurrence-only scoring for duplicates without shifting later positions, truncated lists contributing zero, descending-score ordering with ascending-ID tie-breaks, and limit truncation. Validation of k (bools, non-numerics, non-finite, non-positive) and limit (bools, non-ints, negatives) occurs before rankings materialization, so errors are deterministic and generators are not consumed. search_app.py is untouched and its caller/return schema still work. Scores and fuse share the single _score helper, inputs are not mutated, and the module docstring documents RRF plus the project adaptations.",
+    "findings": [
+      "Validation ordering is correct: _validate_k and _validate_limit run before list(rankings), satisfying the deterministic-error and no-premature-consumption requirement.",
+      "Duplicate handling uses a per-list seen set with enumerate over the original ranking, so retained ranks are original index+1 and later duplicates do not shift subsequent IDs (scores([['a','a','b']]) == {'a': 1/61, 'b': 1/63}).",
+      "Ordering key (-score, doc) yields descending score with ascending plain-string tie-break, and limit=0 returns [] while oversized limits return full ordering.",
+      "fuse delegates to the shared _score helper, guaranteeing consistency with scores().",
+      "Non-blocking: a non-iterable inner ranking would raise TypeError instead of ValueError, but the contract defines inputs as ranked lists; the module docstring does not enumerate validation rules (cosmetic)."
+    ],
+    "evidence": [
+      "fusion.py: _validate_k rejects bool via isinstance check first, then non-(int,float), then non-finite floats via math.isfinite, then k <= 0.",
+      "fusion.py: _validate_limit returns None unchanged, rejects bool and non-int, rejects negatives; fuse calls both validators before list(rankings).",
+      "fusion.py _score: per-list seen set, enumerate(ranking), contribution 1.0/(k + index + 1), accumulated in dict keyed by observed docs only.",
+      "fusion.py fuse: materialized = list(rankings); combined = _score(materialized, k); sorted(key=lambda doc: (-combined[doc], doc)); ordered[:limit] when limit is not None.",
+      "search_app.py: search_results returns {'documents': fuse([keyword_ids, semantic_ids], limit=limit), 'method': 'fusion'} and imports fuse unchanged.",
+      "Verification output: 8 tests OK including test_existing_caller, test_hand_calculated_scores, test_duplicates_preserve_original_positions, test_ties, test_limits, test_invalid_k; metrics record paper_benchmark_reproduced=false."
+    ]
+  },
+  "manifest": {
+    "fusion.py": "b482e66c7198fbd022ad022a0f5db4692e54ec17e2d9908c4cf11a5d4fbc8102",
+    "search_app.py": "21b0147f4c059c8df547b8cae5c360cc2465ff51348f0c24cfd1101c3564127f"
+  }
+}
