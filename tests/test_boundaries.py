@@ -5,7 +5,9 @@ from paperfusion.execution import Executor, run_process
 from paperfusion.contracts import Plan
 
 
-@pytest.mark.parametrize("name", ["../outside.py", "a/../../outside.py", "C:/outside.py", "/outside.py"])
+@pytest.mark.parametrize("name", ["../outside.py", "a/../../outside.py", "C:/outside.py",
+                                  "C:\\outside.py", "C:outside.py", "a\\..\\outside.py",
+                                  "\\\\server\\share\\file.py", "/outside.py"])
 def test_path_escape_rejected(tmp_path, name):
     with pytest.raises(ValueError):
         safe_path(tmp_path, name)

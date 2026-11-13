@@ -38,8 +38,12 @@ def digest(value) -> str:
 
 
 def safe_path(root: Path, relative: str) -> Path:
-    rel = Path(relative)
-    if rel.is_absolute() or rel.drive or ".." in rel.parts or not rel.parts:
+    name = str(relative)
+    rel = Path(name)
+    # Windows drive and separator syntax must be rejected on Linux too, where
+    # Path("C:/file") would otherwise look like a harmless relative path.
+    if ("\\" in name or ":" in name or rel.is_absolute() or rel.drive
+            or ".." in rel.parts or not rel.parts):
         raise ValueError("Use a non-empty relative path inside the workspace")
     root = root.resolve()
     cursor = root
